@@ -204,6 +204,7 @@ static void *_serial_update(void *connection_arg) {
  */
 char *serial_read(struct serial_t *connection) {
   char *buf;
+  buf = NULL;
   if (connection->readAvailable) {
     buf = (char *)malloc((strlen(connection->readbuf) + 1) * sizeof(char));
     memcpy(buf, connection->readbuf, (strlen(connection->readbuf) + 1) * sizeof(char));
