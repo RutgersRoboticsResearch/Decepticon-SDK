@@ -179,7 +179,10 @@ static void *_serial_update(void *connection_arg) {
       if ((end_index = strrchr(connection->buffer, '\n')) != (char *)-1) {
         end_index[0] = '\0';
         start_index = strrchr(connection->buffer, '\n');
-        start_index++;
+        if (start_index == (char *)-1)
+          start_index = connection->buffer;
+        else
+          start_index++;
         totalBytes = (int)(end_index - start_index) + 1; /* include the delimeter */
         memcpy(connection->readbuf, start_index,
             totalBytes * sizeof(char));
