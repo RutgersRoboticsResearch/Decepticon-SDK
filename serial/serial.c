@@ -132,6 +132,10 @@ static int setSerAttr(struct serial_t *connection) {
  *  as well as the connection itself.
  *  @param connection_arg
  *    the serial struct defined opaquely for thread function usage
+ *  @note
+ *    the packets will be read in the following format:
+ *    data\n
+ *    however, the \n will be cut off
  */
 static void *_serial_update(void *connection_arg) {
   struct serial_t *connection;
@@ -169,22 +173,22 @@ static void *_serial_update(void *connection_arg) {
       connection->readbuf[numAvailable] = '\0';
       if ((totalBytes = strlen(connection->buffer) + numAvailable) >= SWBUFMAX) {
         totalBytes -= SWBUFMAX - 1;
-        memmove(connection->buffer, &connection->buffer[totalBytes], SWBUFMAX - totalBytes);
+        memmove(connection->buffer, &connection->buffer[totalBytes],
+            (SWBUFMAX - totalBytes) * sizeof(char));
         connection->buffer[SWBUFMAX - totalBytes] = '\0';
       }
       strcat(connection->buffer, connection->readbuf);
 
       /* extract last data packet */
-      if ((end_index = strrchr(connection->buffer, ']')) != -1) {
-        char c;
-        c = end_index[1];
-        start_index = strrchr(connection->buffer, '[');
+      if ((end_index = strrchr(connection->buffer, '\n')) != -1) {
+        end_index[0] = '\0';
+        start_index = strrchr(connection->buffer, '\n');
         start_index++;
-        end_index[1] = c;
-        totalBytes = (int)(end_index - start_index);
-        memcpy(connection->readbuf, start_index, totalBytes);
-        connection->readbuf[totalBytes] = '\0';
-        memmove(connection->buffer, end_index + 1, strlen(end_index) + 1);
+        totalBytes = (int)(end_index - start_index) + 1; /* include the delimeter */
+        memcpy(connection->readbuf, start_index,
+            totalBytes * sizeof(char));
+        memmove(connection->buffer, &end_index[1],
+            (strlen(end_index) + 1) * sizeof(char));
         connection->readAvailable = 1;
       }
     }
@@ -229,7 +233,7 @@ void serial_write(struct serial_t *connection, char *message) {
  *    A pointer to the serial struct.
  */
 void serial_disconnect(struct serial_t *connection) {
-  if (connection->alive) { /* possible race condition */
+  if (connection->alive) {
     connection->alive = 0;
     pthread_join(connection->thread, NULL);
     pthread_mutex_destroy(&connection->lock);
