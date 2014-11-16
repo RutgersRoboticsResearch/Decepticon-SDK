@@ -80,8 +80,6 @@ int serial_connect(struct serial_t *connection, char *port, int baudrate, int pa
   memset(connection->writebuf, 0, SWWRITEMAX);
 
   /* start update thread */
-  if (pthread_mutex_init(&connection->lock, NULL) != 0)
-    goto error; /* possible bad behavior */
   if (pthread_create(&connection->thread, NULL, _serial_update, (void *)connection) != 0)
     goto error; /* possible bad behavior */
   connection->alive = 1;
@@ -145,8 +143,6 @@ static void *_serial_update(void *connection_arg) {
 
   connection = (struct serial_t *)connection_arg;
   while (connection->alive) {
-    pthread_mutex_lock(&connection->lock);
-
     /* dynamically reconnect the device */
     if (access(connection->port, O_RDWR) != 0) {
       if (connection->connected) {
@@ -192,8 +188,6 @@ static void *_serial_update(void *connection_arg) {
         connection->readAvailable = 1;
       }
     }
-
-    pthread_mutex_unlock(&connection->lock);
   }
   pthread_exit(NULL);
   return NULL;
@@ -207,14 +201,11 @@ static void *_serial_update(void *connection_arg) {
  */
 char *serial_read(struct serial_t *connection) {
   char *buf;
-  buf = NULL;
-  pthread_mutex_lock(&connection->lock);
   if (connection->readAvailable) {
     buf = (char *)malloc((strlen(connection->readbuf) + 1) * sizeof(char));
     memcpy(buf, connection->readbuf, (strlen(connection->readbuf) + 1) * sizeof(char));
     connection->readAvailable = 0;
   }
-  pthread_mutex_unlock(&connection->lock);
   return buf;
 }
 
@@ -236,7 +227,6 @@ void serial_disconnect(struct serial_t *connection) {
   if (connection->alive) {
     connection->alive = 0;
     pthread_join(connection->thread, NULL);
-    pthread_mutex_destroy(&connection->lock);
   }
 
   /* clean up */
