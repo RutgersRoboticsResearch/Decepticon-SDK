@@ -216,6 +216,7 @@ char *serial_read(struct serial_t *connection) {
   }
   pthread_mutex_unlock(&connection->lock);
   return buf;
+    return connection->readbuf;
 }
 
 /** Write a message to the serial communication link.

@@ -1,10 +1,17 @@
-CC = gcc
-CCFLAGS = -Wall -pedantic -g -pthread
+CC=gcc
+CFLAGS=-g -Wall -c
+SOURCES=serial.c test.c
+LINKER=-pthread
+OBJECTS=$(SOURCES:.c=.o)
+	EXECUTABLE=test
 
-all: serial.o
+all: $(SOURCES) $(EXECUTABLE)
 
-serial.o: serial.c
-	${CC} ${CCFLAGS} -c serial.c
+$(EXECUTABLE): $(OBJECTS) 
+	$(CC) $(OBJECTS) $(LINKER) -o $@
+
+.c.o: 
+	$(CC) $(CFLAGS) $< $(LINKER) -o $@
 
 clean:
-	rm -rf *o
+	rm -rf *o $(EXECUTABLE)
