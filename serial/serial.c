@@ -203,7 +203,7 @@ static void *_serial_update(void *connection_arg) {
  *    this will return a malloc'd string! be sure to free when done
  */
 char *serial_read(struct serial_t *connection) {
-  char *buf;
+  char *buf=NULL;
   if (connection->readAvailable) {
     buf = (char *)malloc((strlen(connection->readbuf) + 1) * sizeof(char));
     memcpy(buf, connection->readbuf, (strlen(connection->readbuf) + 1) * sizeof(char));

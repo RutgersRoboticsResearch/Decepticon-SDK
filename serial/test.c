@@ -13,7 +13,11 @@ int main(int argc, char **argv){
     serial_connect(&connection, port, 115200, 0);
     while(1){
         char* test = serial_read(&connection);
-        printf("%s\n", test);
+        if(test){
+            printf("%s\n", test);
+            free(test);
+        }
+
     }
     serial_disconnect(&connection);
     return 0;
