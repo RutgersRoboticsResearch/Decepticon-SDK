@@ -176,7 +176,7 @@ static void *_serial_update(void *connection_arg) {
       strcat(connection->buffer, connection->readbuf);
 
       /* extract last data packet */
-      if ((end_index = strrchr(connection->buffer, '\n')) != -1) {
+      if ((end_index = strrchr(connection->buffer, '\n')) != (char *)-1) {
         end_index[0] = '\0';
         start_index = strrchr(connection->buffer, '\n');
         start_index++;
@@ -207,7 +207,6 @@ char *serial_read(struct serial_t *connection) {
     connection->readAvailable = 0;
   }
   return buf;
-    return connection->readbuf;
 }
 
 /** Write a message to the serial communication link.

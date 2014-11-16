@@ -16,7 +16,6 @@ struct serial_t {
  
   /* threaded update */
   pthread_t       thread;
-  pthread_mutex_t lock;
   int8_t          alive;
 
   /* values */
@@ -32,4 +31,5 @@ int serial_connect(struct serial_t *connection, char *port, int baudrate, int pa
 char *serial_read(struct serial_t *connection);
 void serial_write(struct serial_t *connection, char *message);
 void serial_disconnect(struct serial_t *connection);
+
 #endif
