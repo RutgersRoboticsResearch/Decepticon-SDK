@@ -174,22 +174,6 @@ static void *_serial_update(void *connection_arg) {
         connection->buffer[SWBUFMAX - totalBytes] = '\0';
       }
       strcat(connection->buffer, connection->readbuf);
-
-      /* extract last data packet */
-      if ((end_index = strrchr(connection->buffer, '\n')) != (char *)-1) {
-        end_index[0] = '\0';
-        start_index = strrchr(connection->buffer, '\n');
-        if (start_index == (char *)-1)
-          start_index = connection->buffer;
-        else
-          start_index++;
-        totalBytes = (int)(end_index - start_index) + 1; /* include the delimeter */
-        memcpy(connection->readbuf, start_index,
-            totalBytes * sizeof(char));
-        memmove(connection->buffer, &end_index[1],
-            (strlen(end_index) + 1) * sizeof(char));
-        connection->readAvailable = 1;
-      }
     }
   }
   pthread_exit(NULL);
@@ -203,18 +187,7 @@ static void *_serial_update(void *connection_arg) {
  *    this will return a malloc'd string! be sure to free when done
  */
 char *serial_read(struct serial_t *connection) {
-<<<<<<< HEAD
-  char *buf=NULL;
-=======
-  char *buf;
-  buf = NULL;
->>>>>>> 463f460c02328b6c46b1068407753123f39f58eb
-  if (connection->readAvailable) {
-    buf = (char *)malloc((strlen(connection->readbuf) + 1) * sizeof(char));
-    memcpy(buf, connection->readbuf, (strlen(connection->readbuf) + 1) * sizeof(char));
-    connection->readAvailable = 0;
-  }
-  return buf;
+  return connection->readbuf;
 }
 
 /** Write a message to the serial communication link.
