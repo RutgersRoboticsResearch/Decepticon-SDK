@@ -23,8 +23,6 @@ struct serial_t {
   char    buffer[SWBUFMAX];
   char    readbuf[SWREADMAX];
   int8_t  readAvailable;
-  char    writebuf[SWWRITEMAX];
-  int8_t  writeAvailable;
 };
 
 int serial_connect(struct serial_t *connection, char *port, int baudrate, int parity);

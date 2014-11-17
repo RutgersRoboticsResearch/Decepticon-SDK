@@ -19,16 +19,16 @@ static int setSerAttr(struct serial_t *connection);
 
 /** Connect to a serial device.
  *  @param connection
- *    A pointer to the serial struct.
+ *    a pointer to the serial struct
  *  @param port
- *    A portname, if specified. If not, or if NULL, will open a random port.
+ *    a portname; if NULL, will open a random port
  *  @param baudrate
  *    the bits per second of information to transmit/receive
  *  @param parity
- *    A bool to decide whether or not parity to be turned on.
+ *    specifies whether or not parity is turned on (if unsure, use 0)
+ *  @return 0 on success, -1 on failure
  */
 int serial_connect(struct serial_t *connection, char *port, int baudrate, int parity) {
-  /* try to open the device */
   if (port) {
     connection->port = (char *)malloc((strlen(port) + 1) * sizeof(char));
     strcpy(connection->port, port);
@@ -77,7 +77,6 @@ int serial_connect(struct serial_t *connection, char *port, int baudrate, int pa
   connection->id = NULL;
   memset(connection->buffer, 0, SWBUFMAX);
   memset(connection->readbuf, 0, SWREADMAX);
-  memset(connection->writebuf, 0, SWWRITEMAX);
   connection->readAvailable = 0;
 
   /* start update thread */
@@ -102,6 +101,7 @@ error:
 /** Helper method to set the attributes of a serial connection.
  *  @param connection
  *    the serial port to connect to
+ *  @return 0 on success, -1 on failure
  */
 static int setSerAttr(struct serial_t *connection) {
   struct termios tty;
@@ -131,6 +131,7 @@ static int setSerAttr(struct serial_t *connection) {
  *  as well as the connection itself.
  *  @param connection_arg
  *    the serial struct defined opaquely for thread function usage
+ *  @return 0 on exit
  *  @note
  *    the packets will be read in the following format:
  *    data\n
@@ -197,6 +198,7 @@ static void *_serial_update(void *connection_arg) {
 /** Read a string from the serial communication link.
  *  @param connection
  *    the serial connection to read a message from
+ *  @return a malloc'd string if a message has been read, otherwise NULL
  *  @note
  *    this will return a malloc'd string! be sure to free when done
  */
