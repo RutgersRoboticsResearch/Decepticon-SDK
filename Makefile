@@ -13,7 +13,7 @@ $(TARGET).o: $(TARGET).cpp
 	$(CXX) -c $(CFLAGS) $(TARGET).cpp -o $(TARGET).o $(INCLUDE)
 
 serial.o: serial.c
-	gcc -Wall -Werror -std=c99 -pedantic -pthread -c serial.c
+	gcc -Wall -Werror -pedantic -pthread -c serial.c
 
 decepticon.o: decepticon.cpp
 	g++ -c $(CFLAGS) -c decepticon.cpp -o decepticon.o $(INCLUDE)

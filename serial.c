@@ -23,7 +23,7 @@ static int setSerAttr(struct serial_t *connection);
  *  @param port
  *    A portname, if specified. If not, or if NULL, will open a random port.
  *  @param baudrate
- *    A baudrate, defaulted to 9600.
+ *    the bits per second of information to transmit/receive
  *  @param parity
  *    A bool to decide whether or not parity to be turned on.
  */
@@ -233,6 +233,8 @@ void serial_disconnect(struct serial_t *connection) {
   }
 
   /* clean up */
+  if (!connection->connected)
+    return;
   if (connection->fd != -1)
     close(connection->fd);
   if (connection->port != NULL)

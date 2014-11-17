@@ -3,7 +3,7 @@
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include "serial.h"
+#include "serial.hpp"
 
 #define BAUDRATE 115200
 

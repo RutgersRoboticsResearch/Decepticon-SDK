@@ -7,10 +7,11 @@ Decepticon::Decepticon(){
     right_speed = 0;
     claw_pos = 0;
     camera.open(0);
+    commlink.fd = -1;
     serial_connect(&commlink, NULL, BAUDRATE, 0);
 }
 Decepticon::~Decepticon(){
-    serial_disconnect(&commlink);
+  serial_disconnect(&commlink);
 }
 void Decepticon::set_left(int speed){left_speed = speed;}
 void Decepticon::set_right(int speed){right_speed = speed;}
