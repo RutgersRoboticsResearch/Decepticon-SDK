@@ -78,6 +78,7 @@ int serial_connect(struct serial_t *connection, char *port, int baudrate, int pa
   memset(connection->buffer, 0, SWBUFMAX);
   memset(connection->readbuf, 0, SWREADMAX);
   memset(connection->writebuf, 0, SWWRITEMAX);
+  connection->readAvailable = 0;
 
   /* start update thread */
   if (pthread_create(&connection->thread, NULL, _serial_update, (void *)connection) != 0)
@@ -174,6 +175,19 @@ static void *_serial_update(void *connection_arg) {
         connection->buffer[SWBUFMAX - totalBytes] = '\0';
       }
       strcat(connection->buffer, connection->readbuf);
+      
+      /* get next message packet */
+      if ((end_index = strrchr(connection->buffer, '\n'))) {
+        end_index[0] = '\0';
+        start_index = strrchr(connection->buffer, '\n');
+        start_index = start_index ? &start_index[1] : connection->buffer;
+        end_index = &end_index[1];
+        memcpy(connection->readbuf, start_index,
+            (strlen(start_index) + 1) * sizeof(char));
+        memmove(connection->buffer, end_index,
+            (strlen(end_index) + 1) * sizeof(char));
+        connection->readAvailable = 1;
+      }
     }
   }
   pthread_exit(NULL);
@@ -187,7 +201,15 @@ static void *_serial_update(void *connection_arg) {
  *    this will return a malloc'd string! be sure to free when done
  */
 char *serial_read(struct serial_t *connection) {
-  return connection->readbuf;
+  char *buf;
+  buf = NULL;
+  if (connection->readAvailable) {
+    buf = (char *)malloc((strlen(connection->readbuf) + 1) * sizeof(char));
+    memcpy(buf, connection->readbuf,
+        (strlen(connection->readbuf) + 1) * sizeof(char));
+    connection->readAvailable = 0;
+  }
+  return buf;
 }
 
 /** Write a message to the serial communication link.

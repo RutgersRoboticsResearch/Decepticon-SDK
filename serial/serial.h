@@ -15,8 +15,8 @@ struct serial_t {
   int     parity;
  
   /* threaded update */
-  pthread_t       thread;
-  int8_t          alive;
+  pthread_t thread;
+  int8_t    alive;
 
   /* values */
   char    *id;
