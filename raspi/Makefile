@@ -1,22 +1,27 @@
-CFLAGS=-fPIC -g -Wall `pkg-config --cflags opencv`
-LIBS = `pkg-config --libs opencv`
-INCLUDE = 
-FREE_LIBS = -L/usr/local/lib -pthread
-TARGET = test
+CC = gcc
+CXX = g++
+CCFLAGS = -std=c99 -g -Wall -pedantic -Werror -pthread
+CXXFLAGS = -fPIC -g -Wall -pedantic -Werror -pthread `pkg-config --cflags opencv`
+LIBS = -L/usr/local/lib `pkg-config --libs opencv`
 
-all: $(TARGET)
+# this is your program
+TARGET = agent
 
-$(TARGET): $(TARGET).o serial.o decepticon.o
-	$(CXX) $(INCLUDE) $(CFLAGS) $^ -o $(TARGET) $(LIBS) $(FREE_LIBS)
+# these are your dependencies
+DEPS = controller.o
 
-$(TARGET).o: $(TARGET).cpp
-	$(CXX) -c $(CFLAGS) $(TARGET).cpp -o $(TARGET).o $(INCLUDE)
+all: $(DEPS) $(TARGET)
 
-serial.o: serial.c
-	gcc -Wall -Werror -pedantic -pthread -c serial.c
+$(TARGET): $(TARGET).o $(DEPS)
+	make -C decepticon
+	$(CXX) $(CXXFLAGS) $^ decepticon/*.o -o $(TARGET) $(LIBS)
 
-decepticon.o: decepticon.cpp
-	g++ -c $(CFLAGS) -c decepticon.cpp -o decepticon.o $(INCLUDE)
+# customize your dependecy compilation here
+controller.o:
+	make -C controller
+	cp controller/controller.o .
 
 clean:
-	rm -rf *.o $(TARGET)
+	make clean -C controller
+	make clean -C decepticon
+	rm -f *.o $(TARGET)
