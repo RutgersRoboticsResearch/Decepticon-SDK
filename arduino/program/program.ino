@@ -92,7 +92,6 @@ void setup() {
   //printSpeeds();
 }
 
-
 void loop() {
   // Read from Serial
   if (Serial.available() > 0) {
@@ -117,8 +116,10 @@ void loop() {
     analogWrite(RIGHTSIDE_NEG, 0);
     analogWrite(RIGHTSIDE_POS, abs(rightSpeed));
   }
-  if (millis() - time >= INTERVAL) {
-    time = millis();
+  
+  // print data back to serial
+  if (millis() - oldTime >= INTERVAL) {
+    oldTime = millis();
     unsigned int distance_cm = sonar.ping_cm();
     Serial.println(distance_cm);
   } 
