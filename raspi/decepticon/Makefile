@@ -3,7 +3,7 @@ CXX = g++
 CCFLAGS = -std=c99 -g -Wall -pedantic -Werror -pthread
 CXXFLAGS = -fPIC -g -Wall -pedantic -Werror `pkg-config --cflags opencv`
 DEPS = serial.o decepticon.o
-INCLUDE = -I$(HOME)/raspi/decepticon/robidouille/raspicam_cv
+INCLUDE = -I$(shell pwd)/robidouille/raspicam_cv
 
 all: $(DEPS)
 
