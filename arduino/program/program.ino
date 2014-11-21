@@ -60,16 +60,15 @@ void setSpeeds() {
         break;
     }
   }
-  //printSpeeds();
 }
 
 // Print out the Speeds to the Serial Console
 void printSpeeds() {
-  Serial.print("Claw now: ");
-  Serial.println(clawSpeed);
-  Serial.print("Leftside now: ");
-  Serial.println(leftSpeed);
-  Serial.print("Rightside now: ");
+  Serial.print("C: ");
+  Serial.print(clawSpeed);
+  Serial.print(", L: ");
+  Serial.print(leftSpeed);
+  Serial.print(", R: ");
   Serial.println(rightSpeed);
 }
 
@@ -86,10 +85,7 @@ void setup() {
   pinMode(LEFTSIDE_POS, OUTPUT);
   pinMode(RIGHTSIDE_NEG, OUTPUT);
   pinMode(RIGHTSIDE_POS, OUTPUT);
-  oldTime = millis();  
-  // READY!
-  //Serial.println("Good to go!");
-  //printSpeeds();
+  oldTime = millis();
 }
 
 void loop() {
@@ -121,6 +117,8 @@ void loop() {
   if (millis() - oldTime >= INTERVAL) {
     oldTime = millis();
     unsigned int distance_cm = sonar.ping_cm();
-    Serial.println(distance_cm);
+    Serial.print(distance_cm);
+    Serial.print(" ");
+    printSpeeds();
   } 
 }
