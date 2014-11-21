@@ -52,7 +52,7 @@ int serial_connect(struct serial_t *connection, char *port, int baudrate, int pa
         if (strstr(ent->d_name, prefix)) {
           connection->port = (char *)malloc((strlen(INPUT_DIR) + strlen(ent->d_name) + 1) * sizeof(char));
           sprintf(connection->port, "%s%s", INPUT_DIR, ent->d_name);
-          if ((connection->fd = open(connection->port, O_RDWR)) == -1) {
+          if ((connection->fd = open(connection->port, O_RDWR | O_NONBLOCK)) == -1) {
             free(connection->port);
             connection->port = NULL;
           } else {
@@ -106,7 +106,8 @@ error:
   return -1;
 }
 
-/** Helper method to set the attributes of a serial connection.
+/** Helper method to set the attributes of a serial connection,
+ *  particularly for the arduino.
  *  @param connection
  *    the serial port to connect to
  *  @return 0 on success, -1 on failure
@@ -114,23 +115,14 @@ error:
 static int setSerAttr(struct serial_t *connection) {
   struct termios tty;
   memset(&tty, 0, sizeof(struct termios));
-  if (tcgetattr(connection->fd, &tty) != 0)
-    return -1;
   cfsetospeed(&tty, connection->baudrate);
   cfsetispeed(&tty, connection->baudrate);
-  tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8; /* 8 bit data */
-  tty.c_iflag &= ~(IGNBRK | BRKINT | ICRNL |  /* disable break processing */
-      INLCR | PARMRK | INPCK | ISTRIP);
-  tty.c_lflag = 0;                            /* no signalling chars, no echo, no canonical */
-  tty.c_oflag = 0;                            /* no remapping, no delays */
-  tty.c_cc[VMIN] = 0;                         /* read doesn't block */
-  tty.c_cc[VTIME] = 5;                        /* 0.5 seconds read timeout */
-  tty.c_iflag &= ~(IXON | IXOFF | IXANY);     /* shut off xon/xoff ctrl */
-  tty.c_cflag |= (CLOCAL | CREAD);            /* ignore model controls, enable reading */
-  tty.c_cflag = connection->parity ?          /* optionally turn on parity */
-      (tty.c_cflag | (PARENB | PARODD)) :
-      (tty.c_cflag & ~(PARENB | PARODD));
-  tty.c_cflag |= CSTOPB;                      /* 1 stop bit */
+  tty.c_iflag = 0;
+  tty.c_oflag = 0;
+  tty.c_cflag = CS8 | CLOCAL | CREAD;
+  tty.c_lflag = 1;
+  tty.c_cc[VMIN] = 0;
+  tty.c_cc[VTIME] = 5;
   if (tcsetattr(connection->fd, TCSANOW, &tty) != 0)
     return -1;
   return 0;
@@ -162,7 +154,7 @@ static void *_serial_update(void *connection_arg) {
       }
     } else {
       if (!connection->connected) {
-        if ((connection->fd = open(connection->port, O_RDWR)) != -1) {
+        if ((connection->fd = open(connection->port, O_RDWR | O_NONBLOCK)) != -1) {
           if (setSerAttr(connection) == 0) {
             /* flush garbage out */
             tcflow(connection->fd, TCIOFF);
