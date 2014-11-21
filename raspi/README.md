@@ -5,7 +5,7 @@ This part of the SDK was made with the intention of being used on Raspberry Pis 
 
 <h2> Installing Prequisites </h2>
 
-<h3> Dependencies: </h3>
+<h3> Dependencies </h3>
 
 	sudo apt-get update
 	sudo apt-get upgrade
@@ -17,7 +17,7 @@ This part of the SDK was made with the intention of being used on Raspberry Pis 
 	mv Decepticon-SDK/raspi .
 	sudo ldconfig
 
-<h3> Get the userland libraries: </h3>
+<h3> Get the userland libraries </h3>
 
 	cd raspi/decepticon/
 	git clone https://github.com/raspberrypi/userland.git
