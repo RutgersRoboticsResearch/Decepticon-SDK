@@ -120,7 +120,7 @@ Mat Decepticon::take_picture() {
     return picture;
 }
 
-/** Deprecated. Get a message from the arudino.
+/** Get a message from the arudino.
  */
 char *Decepticon::get_arduino_message() {
   char *buf;
