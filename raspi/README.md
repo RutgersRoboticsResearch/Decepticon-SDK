@@ -20,6 +20,8 @@ This part of the SDK was made with the intention of being used on Raspberry Pis 
 
 <h3> Compile robidouille's raspicam wrapper </h3>
 
+Be sure to change the USERLAND_ROOT variable in raspi/decepticon/robidouille/raspicam_cv to be the full path to the userand directory. For example: $(HOME)/raspi/decepticon/userland
+
 	cd raspi/decepticon/robidouille/raspicam_cv
 	make
 
