@@ -42,6 +42,8 @@ The agent you want to program is located in agent.cpp. To input your own sensors
 
 During the development of this program, we realized that a large bug existed: during startup, the program would spit out garbage during serial reads. In order to stop this from happening, the Arduino program must be started up to read the serial data, then shut down. After that, the agent program runs smoothly.
 
+We unfortunately do not have the time to find out why this occurs or how to fix it. We are sorry about this development.
+
 <h2> Reference </h2>
 
 This is the reference for the Decepticon class. The functions are shown in the header file <i>decepticon.hpp</i>.
