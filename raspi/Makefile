@@ -1,6 +1,6 @@
 CC = gcc
 CXX = g++
-DECEPTICON_DIR = $(HOME)/raspi/decepticon
+DECEPTICON_DIR = $(shell pwd)/decepticon
 CCFLAGS = -std=c99 -g -Wall -pedantic -Werror -pthread
 CXXFLAGS = -fPIC -g -Wall -pedantic -Werror -pthread `pkg-config --cflags opencv`
 LIBS = -L/usr/local/lib `pkg-config --libs opencv`
