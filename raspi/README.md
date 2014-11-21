@@ -9,7 +9,7 @@ This part of the SDK was made with the intention of being used on Raspberry Pis 
 
 	sudo apt-get update
 	sudo apt-get upgrade
-	sudo apt-get install vim cmake git gcc g++ libx11-dev libxt-dev libxext-dev libgraphicsmagick1-dev libopencv-dev
+	sudo apt-get install vim cmake git gcc g++ libx11-dev libxt-dev libxext-dev libgraphicsmagick1-dev libopencv-dev arduino
 	git clone https://github.com/RutgersRoboticsResearch/Decepticon-SDK.git
 	mv Decepticon-SDK/raspi .
 
