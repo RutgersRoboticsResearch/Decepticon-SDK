@@ -74,6 +74,13 @@ int serial_connect(struct serial_t *connection, char *port, int baudrate, int pa
   connection->parity = parity;
   if (setSerAttr(connection) == -1)
     goto error; /* possible bad behavior */
+
+  /* flush garbage out */
+  tcflow(connection->fd, TCIOFF);
+  tcflush(connection->fd, TCIFLUSH);
+  sleep(1);
+  tcflow(connection->fd, TCION);
+
   connection->connected = 1;
   connection->id = NULL;
   memset(connection->buffer, 0, SWBUFMAX);
@@ -156,7 +163,12 @@ static void *_serial_update(void *connection_arg) {
     } else {
       if (!connection->connected) {
         if ((connection->fd = open(connection->port, O_RDWR)) != -1) {
-          if (setSerAttr(connection) == -1) {
+          if (setSerAttr(connection) == 0) {
+            /* flush garbage out */
+            tcflow(connection->fd, TCIOFF);
+            tcflush(connection->fd, TCIFLUSH);
+            sleep(1);
+            tcflow(connection->fd, TCION);
             connection->connected = 1;
           } else {
             close(connection->fd);
