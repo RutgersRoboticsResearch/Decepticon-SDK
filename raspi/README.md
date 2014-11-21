@@ -11,11 +11,10 @@ This part of the SDK was made with the intention of being used on Raspberry Pis 
 	sudo apt-get upgrade
 	sudo apt-get install vim cmake git gcc g++ libx11-dev libxt-dev libxext-dev libgraphicsmagick1-dev libopencv-dev arduino
 
-<h3> Get SDK and configure libraries </h3>
+<h3> Pull Decepticon-SDK </h3>
 
 	git clone https://github.com/RutgersRoboticsResearch/Decepticon-SDK.git
 	mv Decepticon-SDK/raspi .
-	sudo ldconfig
 
 <h3> Get the userland libraries </h3>
 
@@ -29,6 +28,10 @@ This part of the SDK was made with the intention of being used on Raspberry Pis 
 	cd raspi/decepticon/robidouille/raspicam_cv
 	mkdir objs
 	make
+
+<h3> Link shared libs </h3>	
+
+	sudo ldconfig
 
 <h2> Programming the intelligent agent </h2>
 
