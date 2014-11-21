@@ -27,7 +27,7 @@ This part of the SDK was made with the intention of being used on Raspberry Pis 
 
 <h2> Programming the intelligent agent </h2>
 
-The agent you want to program is located in agent.cpp. Guides on how to use the SDK, as well as add your own sensor communication, is located inside slides/pdf provided.
+The agent you want to program is located in agent.cpp. To input your own sensors, just modify the output from the Arduino program. You can get the messages using get_arduino_message() from the Decepticon class. See reference.
 
 <h3> Compile agent program </h3>
 
@@ -42,3 +42,27 @@ The agent you want to program is located in agent.cpp. Guides on how to use the 
 
 	chmod a+x genautotermstart.sh
 	./genautotermstart.sh
+
+<h2> Reference </h2>
+
+This is the reference for the Decepticon class. The functions are shown in the header file <i>decepticon.hpp</i>.
+
+	/* Easy to use functions */
+	void forward();
+	void backward();
+	void turn_left();
+	void turn_right();
+	void stop();
+	void open_claw();
+	void close_claw();
+
+	/* More precise control */
+	void set_left(int speed);     /* min: -255, max: 255 */
+	void set_right(int speed);    /* min: -255, max: 255 */
+	void set_claw(int position);  /* min: 0, max: 180 */
+
+	/* Get camera/ultrasonic data */
+	cv::Mat take_picture();
+	char *get_arduino_message();
+	int get_sonar();
+	bool opened();
