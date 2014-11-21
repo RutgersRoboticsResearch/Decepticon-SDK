@@ -121,6 +121,7 @@ Mat Decepticon::take_picture() {
 }
 
 /** Get a message from the arudino.
+ *  @return a malloc'd string of the message, please free it!
  */
 char *Decepticon::get_arduino_message() {
   char *buf;
