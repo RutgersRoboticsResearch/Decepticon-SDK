@@ -7,9 +7,10 @@ This part of the SDK was made with the intention of being used on Raspberry Pis 
 
 <h3> Dependencies: </h3>
 
-	sudo apt-get install libopencv-dev
-	sudo apt-get install cmake git
-	sudo apt-get install gcc g++ libx11-dev libxt-dev libxext-dev libgraphicsmagick1-dev
+	sudo apt-get update
+	sudo apt-get upgrade
+	sudo apt-get install cmake git gcc g++ libx11-dev libxt-dev libxext-dev libgraphicsmagick1-dev libopencv-dev
+	git clone https://github.com/RutgersRoboticsResearch/Decepticon-SDK.git
 
 <h3> Get the userland libraries: </h3>
 
@@ -35,3 +36,8 @@ The agent you want to program is located in agent.cpp. Guides on how to use the 
 <h3> Test the program </h3>
 
 	./agent
+
+<h3> Making sure it runs on autostart </h3>
+
+	chmod a+x genautotermstart.sh
+	./genautotermstart.sh
