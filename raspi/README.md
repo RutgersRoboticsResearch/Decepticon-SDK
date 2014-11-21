@@ -23,6 +23,7 @@ This part of the SDK was made with the intention of being used on Raspberry Pis 
 <h3> Compile robidouille's raspicam wrapper </h3>
 
 	cd raspi/decepticon/robidouille/raspicam_cv
+	mkdir objs
 	make
 
 <h2> Programming the intelligent agent </h2>
