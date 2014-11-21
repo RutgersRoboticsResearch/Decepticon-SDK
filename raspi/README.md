@@ -38,10 +38,9 @@ The agent you want to program is located in agent.cpp. To input your own sensors
 
 	./agent
 
-<h3> Making sure it runs on autostart </h3>
+<h3> Major Bug: Serial Garbage </h3>
 
-	chmod a+x genautotermstart.sh
-	./genautotermstart.sh
+During the development of this program, we realized that a large bug existed: during startup, the program would spit out garbage during serial reads. In order to stop this from happening, the Arduino program must be started up to read the serial data, then shut down. After that, the agent program runs smoothly.
 
 <h2> Reference </h2>
 
