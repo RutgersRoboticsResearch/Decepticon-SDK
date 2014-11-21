@@ -30,7 +30,7 @@ class Decepticon {
 
     /* Get camera/ultrasonic data */
     cv::Mat take_picture();
-    char *get_arduino_message(); /**deprecated**: please don't use this */
+    char *get_arduino_message();
     int get_sonar();
     bool opened();
 
