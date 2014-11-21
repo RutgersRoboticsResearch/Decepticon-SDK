@@ -122,7 +122,7 @@ static int setSerAttr(struct serial_t *connection) {
   tty.c_cflag &= ~(PARENB | PARODD);          /* shut off parity */
   tty.c_cflag |= connection->parity ? 1 : 0;  /* optionally turn on parity */
   /* tty.c_cflag &= ~(CSTOPB | CRTSCTS);      ** no stop bits */
-  tty.c_cflag &= ~CSTOPB;                     /* no stop bits */
+  tty.c_cflag |= CSTOPB;                      /* 1 stop bit */
   if (tcsetattr(connection->fd, TCSANOW, &tty) != 0)
     return -1;
   return 0;
