@@ -12,7 +12,7 @@ INCLUDE = -I$(DECEPTICON_DIR)/robidouille/raspicam_cv
 TARGET = agent
 
 # R3: these are your dependencies
-DEPS = controller.o
+DEPS = #controller.o
 
 all: $(DEPS) $(TARGET)
 
@@ -24,11 +24,11 @@ $(TARGET).o: $(TARGET).cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@ $(INCLUDE)
 
 # R3: customize your dependecy compilation here
-controller.o:
-	make -C controller
-	cp controller/controller.o .
+#controller.o:
+#	make -C controller
+#	cp controller/controller.o .
 
 clean:
-	make clean -C controller
 	make clean -C decepticon
 	rm -f *.o $(TARGET)
+#	make clean -C controller
