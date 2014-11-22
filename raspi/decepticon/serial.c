@@ -1,4 +1,5 @@
 #include <termios.h>
+#include <sys/ioctl.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,6 +18,7 @@ static char *PREFIXES[3] = {
 
 static void *_serial_update(void *connection);
 static int setSerAttr(struct serial_t *connection);
+static char tempbuf[SWREADMAX];
 
 /** Connect to a serial device.
  *  @param connection
@@ -52,7 +54,7 @@ int serial_connect(struct serial_t *connection, char *port, int baudrate, int pa
         if (strstr(ent->d_name, prefix)) {
           connection->port = (char *)malloc((strlen(INPUT_DIR) + strlen(ent->d_name) + 1) * sizeof(char));
           sprintf(connection->port, "%s%s", INPUT_DIR, ent->d_name);
-          if ((connection->fd = open(connection->port, O_RDWR | O_NONBLOCK)) == -1) {
+          if ((connection->fd = open(connection->port, O_RDWR | O_NOCTTY | O_NDELAY)) == -1) {
             free(connection->port);
             connection->port = NULL;
           } else {
@@ -74,15 +76,8 @@ int serial_connect(struct serial_t *connection, char *port, int baudrate, int pa
   connection->parity = parity;
   if (setSerAttr(connection) == -1)
     goto error; /* possible bad behavior */
-
-  /* flush garbage out */
-  tcflow(connection->fd, TCIOFF);
   tcflush(connection->fd, TCIFLUSH);
-  sleep(1);
-  tcflow(connection->fd, TCION);
-
   connection->connected = 1;
-  connection->id = NULL;
   memset(connection->buffer, 0, SWBUFMAX);
   memset(connection->readbuf, 0, SWREADMAX);
   connection->readAvailable = 0;
@@ -114,16 +109,19 @@ error:
  */
 static int setSerAttr(struct serial_t *connection) {
   struct termios tty;
-  memset(&tty, 0, sizeof(struct termios));
   cfsetospeed(&tty, connection->baudrate);
   cfsetispeed(&tty, connection->baudrate);
-  tty.c_iflag = 0;
-  tty.c_oflag = 0;
-  tty.c_cflag = CS8 | CLOCAL | CREAD;
-  tty.c_lflag = 1;
+  if (tcgetattr(connection->fd, &tty) == -1)
+    return -1;
+  tty.c_iflag &= ~(IXON | IXOFF | IXANY);
+  tty.c_oflag &= ~OPOST;
+  tty.c_cflag &= ~(PARENB | CSTOPB | CSIZE);
+  tty.c_cflag |= CS8 | CLOCAL | CREAD;
+  tty.c_cflag &= ~CRTSCTS;
+  tty.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
   tty.c_cc[VMIN] = 0;
   tty.c_cc[VTIME] = 5;
-  if (tcsetattr(connection->fd, TCSANOW, &tty) != 0)
+  if (tcsetattr(connection->fd, TCSANOW, &tty) == -1)
     return -1;
   return 0;
 }
@@ -142,7 +140,6 @@ static void *_serial_update(void *connection_arg) {
   struct serial_t *connection;
   int numAvailable;
   int totalBytes;
-  char *start_index, *end_index;
 
   connection = (struct serial_t *)connection_arg;
   while (connection->alive) {
@@ -154,13 +151,8 @@ static void *_serial_update(void *connection_arg) {
       }
     } else {
       if (!connection->connected) {
-        if ((connection->fd = open(connection->port, O_RDWR | O_NONBLOCK)) != -1) {
+        if ((connection->fd = open(connection->port, O_RDWR | O_NOCTTY | O_NDELAY)) != -1) {
           if (setSerAttr(connection) == 0) {
-            /* flush garbage out */
-            tcflow(connection->fd, TCIOFF);
-            tcflush(connection->fd, TCIFLUSH);
-            sleep(1);
-            tcflow(connection->fd, TCION);
             connection->connected = 1;
           } else {
             close(connection->fd);
@@ -172,16 +164,19 @@ static void *_serial_update(void *connection_arg) {
     if (!connection->connected)
       continue;
 
+    usleep(10 * 1E3);
+
     /* update buffer */
-    if ((numAvailable = read(connection->fd, connection->readbuf, SWREADMAX)) > 0) {
-      connection->readbuf[numAvailable] = '\0';
+    if ((numAvailable = read(connection->fd, tempbuf, SWREADMAX)) > 0) {
+      char *start_index, *end_index;
+      tempbuf[numAvailable] = '\0';
       if ((totalBytes = strlen(connection->buffer) + numAvailable) >= SWBUFMAX) {
         totalBytes -= SWBUFMAX - 1;
         memmove(connection->buffer, &connection->buffer[totalBytes],
             (SWBUFMAX - totalBytes) * sizeof(char));
         connection->buffer[SWBUFMAX - totalBytes] = '\0';
       }
-      strcat(connection->buffer, connection->readbuf);
+      strcat(connection->buffer, tempbuf);
 
       /* get next message packet */
       if ((end_index = strrchr(connection->buffer, '\n'))) {

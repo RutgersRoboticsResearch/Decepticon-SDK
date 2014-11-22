@@ -3,9 +3,9 @@
 
 #include <stdint.h>
 #include <pthread.h>
-#define SWBUFMAX    512
-#define SWREADMAX   256
-#define SWWRITEMAX  256
+#define SWBUFMAX    256
+#define SWREADMAX   128
+#define SWWRITEMAX  128
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,7 +23,6 @@ struct serial_t {
   int8_t    alive;
 
   /* values */
-  char    *id;
   char    buffer[SWBUFMAX];
   char    readbuf[SWREADMAX];
   int8_t  readAvailable;

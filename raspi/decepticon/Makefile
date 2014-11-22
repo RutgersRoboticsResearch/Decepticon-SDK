@@ -1,6 +1,6 @@
 CC = gcc
 CXX = g++
-CCFLAGS = -std=c99 -g -Wall -pedantic -Werror -pthread
+CCFLAGS = -pthread
 CXXFLAGS = -fPIC -g -Wall -pedantic -Werror `pkg-config --cflags opencv`
 DEPS = serial.o decepticon.o
 INCLUDE = -I$(shell pwd)/robidouille/raspicam_cv

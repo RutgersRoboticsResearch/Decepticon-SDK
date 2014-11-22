@@ -121,16 +121,14 @@ Mat Decepticon::take_picture() {
 }
 
 /** Get a message from the arudino.
- *  @return a malloc'd string of the message, please free it!
+ *  @return a string of the message
  */
 char *Decepticon::get_arduino_message() {
-  char *buf;
-  buf = NULL;
-  if (serial_read(&this->commlink) != NULL) {
-    buf = (char *)malloc((strlen(this->commlink.readbuf) + 1) * sizeof(char));
-    memcpy(buf, this->commlink.readbuf, (strlen(this->commlink.readbuf) + 1) * sizeof(char));
-  }
-  return buf;
+  char *message;
+  message = serial_read(&this->commlink);
+  if (strlen(message) == 0)
+    return NULL;
+  return message;
 }
 
 /** Take a measurement of the ultrasonic sensor
