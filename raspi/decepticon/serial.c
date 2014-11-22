@@ -112,7 +112,8 @@ static int setSerAttr(struct serial_t *connection) {
   cfsetospeed(&tty, connection->baudrate);
   cfsetispeed(&tty, connection->baudrate);
   tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8; /* 8 bit data */
-  tty.c_iflag &= ~IGNBRK;                     /* disable break processing */
+  tty.c_iflag &= ~(IGNBRK | BRKINT | ICRNL |  /* disable break processing */
+      INLCR | PARMRK | INPCK | ISTRIP);
   tty.c_lflag = 0;                            /* no signalling chars, no echo, no canonical */
   tty.c_oflag = 0;                            /* no remapping, no delays */
   tty.c_cc[VMIN] = 0;                         /* read doesn't block */
