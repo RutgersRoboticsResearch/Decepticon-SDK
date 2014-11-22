@@ -111,7 +111,7 @@ static int setSerAttr(struct serial_t *connection) {
     return -1;
   cfsetospeed(&tty, connection->baudrate);
   cfsetispeed(&tty, connection->baudrate);
-  tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8; /* 8 bit chars */
+  tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8; /* 8 bit data */
   tty.c_iflag &= ~IGNBRK;                     /* disable break processing */
   tty.c_lflag = 0;                            /* no signalling chars, no echo, no canonical */
   tty.c_oflag = 0;                            /* no remapping, no delays */
@@ -119,9 +119,9 @@ static int setSerAttr(struct serial_t *connection) {
   tty.c_cc[VTIME] = 5;                        /* 0.5 seconds read timeout */
   tty.c_iflag &= ~(IXON | IXOFF | IXANY);     /* shut off xon/xoff ctrl */
   tty.c_cflag |= (CLOCAL | CREAD);            /* ignore model controls, enable reading */
-  tty.c_cflag &= ~(PARENB | PARODD);          /* shut off parity */
-  tty.c_cflag |= connection->parity ? 1 : 0;  /* optionally turn on parity */
-  /* tty.c_cflag &= ~(CSTOPB | CRTSCTS);      ** no stop bits */
+  tty.c_cflag = connection->parity ?          /* optionally turn on parity */
+      (tty.c_cflag | (PARENB | PARODD)) :
+      (tty.c_cflag & ~(PARENB | PARODD));
   tty.c_cflag |= CSTOPB;                      /* 1 stop bit */
   if (tcsetattr(connection->fd, TCSANOW, &tty) != 0)
     return -1;
