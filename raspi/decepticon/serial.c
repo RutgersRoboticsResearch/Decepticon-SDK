@@ -1,23 +1,23 @@
 #include <termios.h>
 #include <sys/ioctl.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
 #include <dirent.h>
 #include <stdio.h>
-#include <pthread.h>
 #include "serial.h"
 
 #define INPUT_DIR "/dev/"
-static char *PREFIXES[3] = {
+static const char *PREFIXES[3] = {
   "ttyACM",
   "ttyUSB",
   NULL
 };
 
-static void *_serial_update(void *connection);
-static int setSerAttr(struct serial_t *connection);
+static int _serial_setattr(serial_t *connection);
 static char tempbuf[SWREADMAX];
 
 /** Connect to a serial device.
@@ -31,7 +31,8 @@ static char tempbuf[SWREADMAX];
  *    specifies whether or not parity is turned on (if unsure, use 0)
  *  @return 0 on success, -1 on failure
  */
-int serial_connect(struct serial_t *connection, char *port, int baudrate, int parity) {
+int serial_connect(serial_t *connection, char *port, int baudrate, int parity) {
+  connection->connected = 0;
   if (port) {
     connection->port = (char *)malloc((strlen(port) + 1) * sizeof(char));
     strcpy(connection->port, port);
@@ -45,9 +46,8 @@ int serial_connect(struct serial_t *connection, char *port, int baudrate, int pa
       fprintf(stderr, "Cannot find directory %s to open serial connection\n", INPUT_DIR);
       return -1;
     }
-    connection->connected = 0;
     while ((ent = readdir(dp))) {
-      char *prefix;
+      const char *prefix;
       int i;
       hasPossibleSerial = 0;
       for (prefix = PREFIXES[(i = 0)]; prefix != NULL; prefix = PREFIXES[++i])
@@ -74,7 +74,7 @@ int serial_connect(struct serial_t *connection, char *port, int baudrate, int pa
   /* set connection attributes */
   connection->baudrate = baudrate;
   connection->parity = parity;
-  if (setSerAttr(connection) == -1)
+  if (_serial_setattr(connection) == -1)
     goto error; /* possible bad behavior */
   tcflush(connection->fd, TCIFLUSH);
   connection->connected = 1;
@@ -82,16 +82,11 @@ int serial_connect(struct serial_t *connection, char *port, int baudrate, int pa
   memset(connection->readbuf, 0, SWREADMAX);
   connection->readAvailable = 0;
 
-  /* start update thread */
-  if (pthread_create(&connection->thread, NULL, _serial_update, (void *)connection) != 0)
-    goto error; /* possible bad behavior */
-  connection->alive = 1;
   return 0;
 
 error:
   fprintf(stderr, "Cannot connect to the device on %s\n", connection->port);
   connection->connected = 0;
-  connection->alive = 0;
   if (connection->fd != -1)
     close(connection->fd);
   connection->fd = -1;
@@ -102,12 +97,12 @@ error:
 }
 
 /** Helper method to set the attributes of a serial connection,
- *  particularly for the arduino.
+ *  particularly for the arduino or similar device.
  *  @param connection
  *    the serial port to connect to
  *  @return 0 on success, -1 on failure
  */
-static int setSerAttr(struct serial_t *connection) {
+static int _serial_setattr(serial_t *connection) {
   struct termios tty;
   cfsetospeed(&tty, connection->baudrate);
   cfsetispeed(&tty, connection->baudrate);
@@ -126,83 +121,93 @@ static int setSerAttr(struct serial_t *connection) {
   return 0;
 }
 
+/** Hacky way to sync serial via python script.
+ */
+void serial_sync(serial_t *connection) {
+  int pid;
+  pid = fork();
+  if (pid == 0) {
+    char numbuf[16];
+    sprintf(numbuf, "%d", connection->baudrate);
+    execlp("python", "python", "syncserial.py", connection->port, numbuf, NULL);
+  } else {
+    waitpid(pid, NULL, 0);
+  }
+}
+
 /** Threadable method to update the readbuf of the serial communication,
  *  as well as the connection itself.
- *  @param connection_arg
- *    the serial struct defined opaquely for thread function usage
- *  @return 0 on exit
+ *  @param connection
+ *    the serial struct
  *  @note
  *    the packets will be read in the following format:
  *    data\n
  *    however, the \n will be cut off
  */
-static void *_serial_update(void *connection_arg) {
-  struct serial_t *connection;
+void serial_update(serial_t *connection) {
   int numAvailable;
   int totalBytes;
 
-  connection = (struct serial_t *)connection_arg;
-  while (connection->alive) {
-    /* dynamically reconnect the device */
-    if (access(connection->port, O_RDWR) != 0) {
-      if (connection->connected) {
-        connection->connected = 0;
-        connection->fd = -1;
-      }
-    } else {
-      if (!connection->connected) {
-        if ((connection->fd = open(connection->port, O_RDWR | O_NOCTTY | O_NDELAY)) != -1) {
-          if (setSerAttr(connection) == 0) {
-            connection->connected = 1;
-          } else {
-            close(connection->fd);
-            connection->fd = -1;
-          }
+  /* dynamically reconnect the device */
+  if (access(connection->port, O_RDWR) != 0) {
+    if (connection->connected) {
+      connection->connected = 0;
+      connection->fd = -1;
+    }
+  } else {
+    if (!connection->connected) {
+      if ((connection->fd = open(connection->port, O_RDWR | O_NOCTTY | O_NDELAY)) != -1) {
+        if (_serial_setattr(connection) == 0) {
+          connection->connected = 1;
+        } else {
+          close(connection->fd);
+          connection->fd = -1;
         }
       }
     }
-    if (!connection->connected)
-      continue;
+  }
+  if (!connection->connected)
+    return;
 
-    usleep(10 * 1E3);
+  /* update buffer */
+  if ((numAvailable = read(connection->fd, tempbuf, SWREADMAX)) > 0) {
+    char *start_index, *end_index;
+    tempbuf[numAvailable] = '\0';
+    if ((totalBytes = strlen(connection->buffer) + numAvailable) >= SWBUFMAX) {
+      totalBytes -= SWBUFMAX - 1;
+      memmove(connection->buffer, &connection->buffer[totalBytes],
+          (SWBUFMAX - totalBytes) * sizeof(char));
+      connection->buffer[SWBUFMAX - totalBytes] = '\0';
+    }
+    strcat(connection->buffer, tempbuf);
 
-    /* update buffer */
-    if ((numAvailable = read(connection->fd, tempbuf, SWREADMAX)) > 0) {
-      char *start_index, *end_index;
-      tempbuf[numAvailable] = '\0';
-      if ((totalBytes = strlen(connection->buffer) + numAvailable) >= SWBUFMAX) {
-        totalBytes -= SWBUFMAX - 1;
-        memmove(connection->buffer, &connection->buffer[totalBytes],
-            (SWBUFMAX - totalBytes) * sizeof(char));
-        connection->buffer[SWBUFMAX - totalBytes] = '\0';
-      }
-      strcat(connection->buffer, tempbuf);
-
-      /* get next message packet */
-      if ((end_index = strrchr(connection->buffer, '\n'))) {
-        end_index[0] = '\0';
-        start_index = strrchr(connection->buffer, '\n');
-        start_index = start_index ? &start_index[1] : connection->buffer;
-        end_index = &end_index[1];
-        memcpy(connection->readbuf, start_index,
-            (strlen(start_index) + 1) * sizeof(char));
-        memmove(connection->buffer, end_index,
-            (strlen(end_index) + 1) * sizeof(char));
-        connection->readAvailable = 1;
-      }
+    if ((end_index = strrchr(connection->buffer, '\n'))) {
+      end_index[0] = '\0';
+      end_index = &end_index[1];
+      start_index = strrchr(connection->buffer, '\n');
+      start_index = start_index ? &start_index[1] : connection->buffer;
+      memcpy(connection->readbuf, start_index,
+          (strlen(start_index) + 1) * sizeof(char));
+      memmove(connection->buffer, end_index,
+          (strlen(end_index) + 1) * sizeof(char));
+      connection->readAvailable = 1;
     }
   }
-  pthread_exit(NULL);
-  return NULL;
 }
 
 /** Read a string from the serial communication link.
  *  @param connection
  *    the serial connection to read a message from
- *  @return the readbuf
+ *  @return the readbuf if a message exists, else NULL
  */
-char *serial_read(struct serial_t *connection) {
-  return connection->readbuf;
+char *serial_read(serial_t *connection) {
+  serial_update(connection);
+  if (connection->readAvailable) {
+    connection->readAvailable = 0;
+    return connection->readbuf;
+  } else {
+    return NULL;
+  }
 }
 
 /** Write a message to the serial communication link.
@@ -210,8 +215,10 @@ char *serial_read(struct serial_t *connection) {
  *    the serial communication link to write to
  *  @param message
  *    the message to send over to the other side
+ *  @note
+ *    be sure the message has a '\n' chararacter
  */
-void serial_write(struct serial_t *connection, char *message) {
+void serial_write(serial_t *connection, char *message) {
   if (connection->fd != -1)
     write(connection->fd, message, strlen(message));
 }
@@ -220,12 +227,7 @@ void serial_write(struct serial_t *connection, char *message) {
  *  @param connection
  *    A pointer to the serial struct.
  */
-void serial_disconnect(struct serial_t *connection) {
-  if (connection->alive) {
-    connection->alive = 0;
-    pthread_join(connection->thread, NULL);
-  }
-
+void serial_disconnect(serial_t *connection) {
   /* clean up */
   if (!connection->connected)
     return;
@@ -233,6 +235,6 @@ void serial_disconnect(struct serial_t *connection) {
     close(connection->fd);
   if (connection->port != NULL)
     free(connection->port);
-  memset(connection, 0, sizeof(struct serial_t));
+  memset(connection, 0, sizeof(serial_t));
   connection->fd = -1;
 }
