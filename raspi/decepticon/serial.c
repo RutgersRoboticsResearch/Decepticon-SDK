@@ -82,6 +82,9 @@ int serial_connect(serial_t *connection, char *port, int baudrate, int parity) {
   memset(connection->readbuf, 0, SWREADMAX);
   connection->readAvailable = 0;
 
+  /* sync connection */
+  serial_sync(connection);
+
   return 0;
 
 error:
