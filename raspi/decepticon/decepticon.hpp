@@ -36,7 +36,7 @@ class Decepticon {
 
   private:
     RaspiCamCvCapture *camera;
-    struct serial_t commlink;
+    serial_t commlink;
     int left_speed;
     int right_speed;
     int claw_pos;
