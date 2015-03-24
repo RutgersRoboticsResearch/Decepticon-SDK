@@ -6,13 +6,13 @@ using namespace cv;
 /** Constructor
  */
 Decepticon::Decepticon() {
-    this->left_speed = 0;
-    this->right_speed = 0;
-    this->claw_pos = 0;
-    this->camera = raspiCamCvCreateCameraCapture(CAMERA_DEV);
-    serial_connect(&this->commlink, NULL, BAUDRATE);
-    if (this->commlink.connected)
-      send_to_arduino();
+  this->left_speed = 0;
+  this->right_speed = 0;
+  this->claw_pos = 0;
+  this->camera = raspiCamCvCreateCameraCapture(CAMERA_DEV);
+  serial_connect(&this->commlink, NULL, BAUDRATE);
+  if (this->commlink.connected)
+    send_to_arduino();
 }
 
 /** Deconstructor
@@ -111,13 +111,13 @@ void Decepticon::close_claw() {
  *  @return a matrix representing the picture
  */
 Mat Decepticon::take_picture() {
-    Mat picture;
-    if (!this->camera)
-      this->camera = raspiCamCvCreateCameraCapture(CAMERA_DEV);
-    if (!this->camera) /* stop trying and give up */
-      return picture;
-    picture = raspiCamCvQueryFrame(this->camera);
+  Mat picture;
+  if (!this->camera)
+    this->camera = raspiCamCvCreateCameraCapture(CAMERA_DEV);
+  if (!this->camera) /* stop trying and give up */
     return picture;
+  picture = raspiCamCvQueryFrame(this->camera);
+  return picture;
 }
 
 /** Get a message from the arudino.
@@ -135,11 +135,11 @@ char *Decepticon::get_arduino_message() {
  *  @return a value representing the distance from the sonar sensor in cm
  */
 int Decepticon::get_sonar() {
-    int get_sonar_cm;
-    get_sonar_cm = 0;
-    sscanf(serial_read(&this->commlink), "%03d",
-        &get_sonar_cm);
-    return get_sonar_cm;
+  int get_sonar_cm;
+  get_sonar_cm = 0;
+  sscanf(serial_read(&this->commlink), "%03d",
+      &get_sonar_cm);
+  return get_sonar_cm;
 }
 
 /** Check to see if everything is opened correctly
@@ -156,12 +156,18 @@ bool Decepticon::opened() {
 /** Send values to the arduino
  */
 void Decepticon::send_to_arduino() {
-  int l, r, c;
-  l = this->left_speed < 0 ? -this->left_speed + 255 : this->left_speed;
-  r = this->right_speed < 0 ? -this->right_speed + 255 : this->right_speed;
-  c = this->claw_pos;
-  sprintf(this->buf, "%03d%03d%03d\n", c, l, r);
-  serial_write(&this->commlink, this->buf);
+  char sig[3];
+  sig[1] = '\n';
+  sig[2] = '\0';
+  sig[0] = 0x40;
+  sig[0] = (this->left_speed < 0) ? (sig[0] | 0x10):
+    ((this->left_speed > 0) ? (sig[0] | 0x20) : sig[0]);
+  sig[0] = (this->right_speed > 0) ? (sig[0] | 0x08) :
+    ((this->right_speed < 0) ? (sig[0] | 0x04) : sig[0]);
+  sig[0] = (this->claw_pos == 180) ? (sig[0] | 0x02) :
+    ((this->claw_pos == 90) ? (sig[0] | 0x01) : sig[0]);
+
+  serial_write(&this->commlink, sig);
 }
 
 /** Limit a signal between a min and max
@@ -174,5 +180,5 @@ void Decepticon::send_to_arduino() {
  *  @return the limited signal
  */
 int Decepticon::limit_signal(int signal, int min, int max) {
-  return (signal > max) ? max : (signal < min ? min : signal);
+ return (signal > max) ? max : (signal < min ? min : signal);
 }
