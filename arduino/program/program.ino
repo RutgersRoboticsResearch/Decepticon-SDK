@@ -11,7 +11,7 @@
 #define TRIGGER_PIN    12
 #define ECHO_PIN       11
 #define MAX_DISTANCE   200
-#define INTERVAL       50
+#define INTERVAL       200
 
 char buf[256];
 Servo claw;
@@ -91,9 +91,18 @@ void setup() {
 void loop() {
   // Read from Serial
   if (Serial.available() > 0) {
-    int n;
-    n = Serial.readBytesUntil('\n', buf, 255);
-    setSpeeds();
+    char c;
+    c = Serial.read();
+    if (c != '\n') {
+      leftSpeed = 255 * (((c & 0x20) >> 5) - ((c & 0x10) >> 4));
+      rightSpeed = 255 * (((c & 0x08) >> 3) - ((c & 0x04) >> 2));
+      clawSpeed = 90 * (c & 0x3);
+      if (clawSpeed > 180) {
+        clawSpeed = 180;
+      } else if (clawSpeed < 0) {
+        clawSpeed = 0;
+      }
+    }
   }
 
   // Write the speeds
