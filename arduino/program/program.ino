@@ -74,7 +74,7 @@ void printSpeeds() {
 
 void setup() {
   // Begin Serial
-  Serial.begin(115200);
+  Serial.begin(38400);
 
   // variable inits
   clawSpeed = 90;

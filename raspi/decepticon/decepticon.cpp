@@ -10,7 +10,7 @@ Decepticon::Decepticon() {
     this->right_speed = 0;
     this->claw_pos = 0;
     this->camera = raspiCamCvCreateCameraCapture(CAMERA_DEV);
-    serial_connect(&this->commlink, NULL, BAUDRATE, 0);
+    serial_connect(&this->commlink, NULL, BAUDRATE);
     if (this->commlink.connected)
       send_to_arduino();
 }

@@ -7,7 +7,7 @@
 #include "RaspiCamCV.h"
 
 #define CAMERA_DEV  0
-#define BAUDRATE    115200
+#define BAUDRATE    38400
 
 class Decepticon {
   public:
